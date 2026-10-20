@@ -3,9 +3,13 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Field: VLSI / ASIC Design](https://img.shields.io/badge/Domain-VLSI%20%2F%20STA%20%2F%20ECO-orange.svg)](#)
-[![Status: Signoff Closed](https://img.shields.io/badge/Timing-Signoff%20MET-brightgreen.svg)](#)
+[![Status: Timing Closure Verified](https://img.shields.io/badge/Timing-Closure%20Verified-brightgreen.svg)](#)
 
-A comprehensive, industry-standard simulation and analysis framework for **Static Timing Analysis (STA)**, **Timing Closure via Engineering Change Order (ECO)**, and **On-Chip Variation (OCV / CRPR / Clock Jitter)** modeling in high-speed deep submicron / FinFET digital ASIC designs.
+> [!NOTE]
+> **Scope & Educational Modeling Notice:**  
+> This framework is an analytical and algorithmic modeling framework for **Static Timing Analysis (STA)**, **Timing ECO closure**, and **On-Chip Variation (OCV / CRPR / Clock Jitter)** physics built in pure Python. It simulates Non-Linear Delay Models (NLDM), cell sizing trade-offs, and generates industry-compatible Tcl scripts (`size_cell`, `insert_buffer`, `split_fanout`). It is designed for VLSI EDA education, CAD algorithm research, and timing physics exploration, rather than replacing commercial signoff tools (e.g. Synopsys PrimeTime or Cadence Tempus).
+
+A comprehensive simulation and analysis framework for **Static Timing Analysis (STA)**, **Timing Closure via Engineering Change Order (ECO)**, and **On-Chip Variation (OCV / CRPR / Clock Jitter)** modeling in high-speed deep submicron digital ASIC designs.
 
 ---
 
@@ -81,8 +85,8 @@ $$\frac{\partial (Slack_{setup})}{\partial (Jitter)} = -1.00\text{ ps/ps}, \quad
 
 ### 1. Clone & Setup
 ```bash
-git clone https://github.com/<your-username>/sta-timing-closure-eco.git
-cd sta-timing-closure-eco
+git clone https://github.com/vn-ntd/sta_timing_closure_eco.git
+cd sta_timing_closure_eco
 ```
 
 ### 2. Run Comprehensive Experiments
@@ -97,16 +101,9 @@ Demonstrates automated iterative timing closure:
 python run_auto_eco.py
 ```
 
----
-
-## 📜 How to Push to GitHub
-
-1. Create a new empty repository on [GitHub](https://github.com/new) named `sta-timing-closure-eco`.
-2. Run the following commands in terminal:
+### 4. Run Verification Tests
 ```bash
-git remote add origin https://github.com/<your-username>/sta-timing-closure-eco.git
-git branch -M main
-git push -u origin main
+pytest tests/
 ```
 
 ---

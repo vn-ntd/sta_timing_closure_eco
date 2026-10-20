@@ -161,14 +161,14 @@ class ECOEngine:
                 if net and cell:
                     self.split_fanout(net, cell, max_fanout)
 
-    def run_automated_timing_closure(self, max_iterations: int = 10) -> Dict:
+    def run_automated_timing_closure(self, max_iterations: int = 10, target_setup_margin: float = 20.0, target_hold_margin: float = 15.0) -> Dict:
         """
         Automated ECO algorithm:
         1. Fix HFN & Max Slew violations via driver sizing and buffer insertion.
-        2. Fix Setup Violations: Iterate over critical path gates, calculate Delay/Power sensitivity,
-           upsize weak drivers, and swap HVT -> SVT -> LVT.
-        3. Fix Hold Violations: Insert appropriately sized delay cells.
-        4. Power Recovery: Downsize cells on paths with positive slack to HVT/X1.
+        2. Fix Setup Violations: Iterate over critical path gates until target setup margin is reached,
+           avoiding over-buffering and excessive power penalty.
+        3. Fix Hold Violations: Insert targeted delay cells up to target hold margin.
+        4. Power Recovery: Downsize cells on paths with excess positive slack to HVT/X1.
         """
         results = {"steps": [], "setup_fixed": False, "hold_fixed": False}
 
@@ -185,11 +185,11 @@ class ECOEngine:
                 self.insert_buffer(net_name, "u_eco_hfn_buf_alu", "BUF_X4_SVT", "u_alu_stage4_and/B")
                 results["steps"].append("Auto-ECO: Fixed HFN ctrl_enable by upsizing driver to BUF_X8 and inserting BUF_X4")
 
-        # Step 2: Fix Setup
+        # Step 2: Fix Setup (stops as soon as target_setup_margin is met)
         for _ in range(max_iterations):
             sta = STAEngine(self.design)
             rep_setup = sta.analyze_setup_critical_path()
-            if rep_setup.slack >= 0:
+            if rep_setup.slack >= target_setup_margin:
                 results["setup_fixed"] = True
                 break
 
@@ -226,15 +226,15 @@ class ECOEngine:
             self.size_cell(worst_cell, new_type)
             results["steps"].append(f"Auto-ECO Setup: Optimized {worst_cell} -> {new_type}")
 
-        # Step 3: Fix Hold
+        # Step 3: Fix Hold (controlled margin to avoid excessive leakage)
         sta = STAEngine(self.design)
         rep_hold = sta.analyze_hold_critical_path()
-        if rep_hold.slack < 0:
-            viol_magnitude = abs(rep_hold.slack)
-            # Insert delay cell
-            self.insert_buffer("net_status_fast_1", "u_auto_hold_delay", "DELAY_CELL_X2_HVT", "u_reg_status_capture/D")
+        if rep_hold.slack < target_hold_margin:
+            viol_magnitude = target_hold_margin - rep_hold.slack
+            buf_type = "DELAY_CELL_X1_HVT" if viol_magnitude < 25.0 else "DELAY_CELL_X2_HVT"
+            self.insert_buffer("net_status_fast_1", "u_auto_hold_delay", buf_type, "u_reg_status_capture/D")
             results["hold_fixed"] = True
-            results["steps"].append(f"Auto-ECO Hold: Inserted DELAY_CELL_X2_HVT for violation of {viol_magnitude:.2f} ps")
+            results["steps"].append(f"Auto-ECO Hold: Inserted {buf_type} (target margin: {target_hold_margin} ps)")
         else:
             results["hold_fixed"] = True
 
