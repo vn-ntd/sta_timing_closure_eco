@@ -1,7 +1,8 @@
 # Advanced Static Timing Analysis (STA) & Timing Closure / ECO Framework
 
+[![CI](https://github.com/vn-ntd/sta_timing_closure_eco/actions/workflows/ci.yml/badge.svg)](https://github.com/vn-ntd/sta_timing_closure_eco/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python: 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Python: 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Field: VLSI / ASIC Design](https://img.shields.io/badge/Domain-VLSI%20%2F%20STA%20%2F%20ECO-orange.svg)](#)
 [![Status: Validated on synthetic design](https://img.shields.io/badge/Timing%20ECO-Validated%20on%20synthetic%20design-blue.svg)](#)
 
@@ -28,19 +29,29 @@ A comprehensive simulation and analysis framework for **Static Timing Analysis (
 
 ```text
 .
+├── .github/
+│   └── workflows/ci.yml           # GitHub Actions CI matrix workflow
 ├── docs/
 │   └── STA_TIMING_REPORT.md       # Comprehensive analytical signoff report
 ├── models/
-│   ├── __init__.py                # Module declarations
+│   ├── __init__.py                # Package exports
 │   ├── lib_cells.py               # Standard cell library (NLDM, VT scaling, delay models)
 │   ├── design.py                  # 1.67 GHz Crypto MAC netlist & clock distribution tree
 │   ├── sta_engine.py              # STA engine (forward propagation, OCV, CRPR, report generator)
 │   └── eco_engine.py              # ECO parser & automated timing closure optimizer
 ├── tcl_scripts/
 │   └── eco_manual.tcl             # Industry-standard Tcl ECO script
-├── run_experiments.py             # Master experiment runner (Baseline, ECO, OCV, Jitter)
+├── tests/
+│   ├── test_sta_engine.py         # STA engine, slack equations, CRPR & Jitter tests
+│   ├── test_eco_engine.py         # Sizing, buffer insertion, split_fanout & Tcl execution tests
+│   ├── test_lib_cells.py          # NLDM models, VT scaling & cell characteristics tests
+│   ├── test_design.py             # Design connectivity & netlist graph tests
+│   └── test_cli.py                # CLI interface & JSON/CSV export tests
+├── run_experiments.py             # Master experiment runner (CLI, OCV & Jitter sweeps, exports)
 ├── run_auto_eco.py                # Standalone automated algorithmic ECO runner
-├── requirements.txt               # Environment dependencies
+├── pyproject.toml                 # Modern PEP 517/518 build metadata & tool configs
+├── requirements.txt               # Core runtime environment declaration
+├── requirements-dev.txt           # Development & testing dependencies
 ├── LICENSE                        # MIT License
 └── README.md                      # Project documentation
 ```
@@ -87,6 +98,9 @@ $$\frac{\partial (Slack_{setup})}{\partial (Jitter)} = -1.00\text{ ps/ps}, \quad
 ```bash
 git clone https://github.com/vn-ntd/sta_timing_closure_eco.git
 cd sta_timing_closure_eco
+
+# Install package in editable mode with development dependencies
+pip install -e ".[dev]"
 ```
 
 ### 2. Run Comprehensive Experiments
@@ -95,15 +109,25 @@ Executes baseline STA, applies `tcl_scripts/eco_manual.tcl`, verifies signoff cl
 python run_experiments.py
 ```
 
+Advanced CLI options with structured data export:
+```bash
+# Export signoff summary to JSON and sweep tables to CSV
+python run_experiments.py --quiet --export-json reports/timing_summary.json --export-csv reports/sweep
+
+# Customize OCV derate factors and clock jitter
+python run_experiments.py --derate-late 1.10 --derate-early 0.90 --jitter 25.0
+```
+
 ### 3. Run Automated Algorithmic ECO
 Demonstrates automated iterative timing closure:
 ```bash
 python run_auto_eco.py
 ```
 
-### 4. Run Verification Tests
+### 4. Run Verification Tests & Coverage
 ```bash
-pytest tests/
+# Run 25 unit tests with line and branch coverage (>92% coverage)
+pytest --cov=models tests/
 ```
 
 ---

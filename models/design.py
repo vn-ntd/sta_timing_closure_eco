@@ -1,20 +1,22 @@
 """
 Circuit netlist and graph representation of a high-frequency Cryptographic MAC Core (1.67 GHz).
 Deliberately introduces:
-1. Critical Setup Path: 9-stage ALU cone, HVT X1 cells, wire RC -> WNS = -220 ps.
-2. High Fanout Net (HFN): ctrl_enable driving 64 load pins -> Slew = 110 ps violation.
-3. Critical Hold Path: Fast LVT buffer + large positive clock skew -> WNS = -55 ps.
+1. Critical Setup Path: 9-stage ALU cone, HVT X1 cells, wire RC -> WNS = -48.97 ps.
+2. High Fanout Net (HFN): ctrl_enable driving 65 load pins -> Slew = 91.2 ps (violates 60 ps max limit).
+3. Critical Hold Path: Fast LVT buffer + large positive clock skew -> WNS = -17.90 ps.
 4. Non-critical path for Power Recovery ECO.
 """
 
-from typing import List, Dict, Optional, Set
+from typing import Optional
+
 from .lib_cells import LIB, CellType
+
 
 class Net:
     def __init__(self, name: str, wire_cap: float = 2.0, wire_res: float = 0.5):
         self.name = name
         self.driver_pin: Optional[str] = None
-        self.sink_pins: List[str] = []
+        self.sink_pins: list[str] = []
         self.wire_cap = wire_cap # fF
         self.wire_res = wire_res # Ohms
 
@@ -24,7 +26,7 @@ class Instance:
         self.cell_type_name = cell_type_name
         self.cell_type: CellType = LIB.get(cell_type_name)
         # Port connections: pin_name -> net_name
-        self.connections: Dict[str, str] = {}
+        self.connections: dict[str, str] = {}
 
     def change_cell_type(self, new_cell_type_name: str):
         self.cell_type_name = new_cell_type_name
@@ -34,8 +36,8 @@ class CircuitDesign:
     def __init__(self, name: str, clk_period: float = 600.0):
         self.name = name
         self.clk_period = clk_period # 600 ps = 1.667 GHz target
-        self.instances: Dict[str, Instance] = {}
-        self.nets: Dict[str, Net] = {}
+        self.instances: dict[str, Instance] = {}
+        self.nets: dict[str, Net] = {}
         self.clock_port = "clk"
         self.clock_uncertainty_setup = 35.0 # ps (jitter + margin)
         self.clock_uncertainty_hold = 20.0  # ps
@@ -166,7 +168,7 @@ def build_high_perf_mac_design() -> CircuitDesign:
     design.connect("u_ctrl_drv", "Y", "ctrl_enable", is_driver=True)
 
     # Net ctrl_enable has large distribution wire capacitance
-    hfn_net = design.get_or_create_net("ctrl_enable", wire_cap=110.0)
+    design.get_or_create_net("ctrl_enable", wire_cap=110.0)
 
     # 64 load gates
     for i in range(64):

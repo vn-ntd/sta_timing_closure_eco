@@ -1,15 +1,8 @@
-import sys
-from pathlib import Path
-
-# Add project root to sys.path
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
 import pytest
+
 from models.design import build_high_perf_mac_design
-from models.sta_engine import STAEngine, STACondition
 from models.eco_engine import ECOEngine
+from models.sta_engine import STACondition, STAEngine
 
 
 @pytest.fixture
@@ -88,3 +81,47 @@ def test_automated_eco_stops_at_margin(clean_design):
     assert results["hold_fixed"] is True
     assert rep_setup_post.slack >= 0
     assert rep_hold_post.slack >= 0
+
+
+def test_power_and_area_computation(clean_design):
+    """Verifies static leakage power and cell area aggregation."""
+    engine = STAEngine(clean_design)
+    leakage, area = engine.compute_power_and_area()
+    assert leakage > 0
+    assert area > 0
+    assert isinstance(leakage, float)
+    assert isinstance(area, float)
+
+
+def test_high_fanout_and_slew_detection(clean_design):
+    """Verifies that high fanout nets exceeding limit are detected."""
+    engine = STAEngine(clean_design)
+    hfn_viols = engine.analyze_high_fanout_nets(max_fanout_limit=16, max_slew_limit=60.0)
+    assert len(hfn_viols) > 0
+    net_names = [v["net"] for v in hfn_viols]
+    assert "ctrl_enable" in net_names
+
+
+def test_primetime_report_formatter(clean_design):
+    """Verifies that PrimeTime-style reports are generated for both setup and hold paths."""
+    engine = STAEngine(clean_design)
+    rep_setup = engine.analyze_setup_critical_path()
+    formatted_setup = engine.format_primetime_report(rep_setup)
+    assert "Timing Report" in formatted_setup
+    assert "MAX (Setup)" in formatted_setup
+    assert "data arrival time" in formatted_setup
+    assert "data required time" in formatted_setup
+
+    rep_hold = engine.analyze_hold_critical_path()
+    formatted_hold = engine.format_primetime_report(rep_hold)
+    assert "MIN (Hold)" in formatted_hold
+    assert "clock network delay (capture late)" in formatted_hold
+
+
+def test_non_critical_path_analysis(clean_design):
+    """Verifies analysis of non-critical timing path for power recovery."""
+    engine = STAEngine(clean_design)
+    rep_noncrit = engine.analyze_non_critical_path()
+    assert rep_noncrit.path_name is not None
+    assert rep_noncrit.slack > 0
+

@@ -3,15 +3,16 @@ ECO (Engineering Change Order) Execution Engine & Automated Optimizer.
 Supports parsing standard Tcl ECO commands and automated timing closure algorithms.
 """
 
-from typing import List, Dict, Tuple
-from .design import CircuitDesign, Instance, Net
-from .lib_cells import LIB, CellType
-from .sta_engine import STAEngine, STACondition
+
+from .design import CircuitDesign
+from .lib_cells import LIB
+from .sta_engine import STAEngine
+
 
 class ECOEngine:
     def __init__(self, design: CircuitDesign):
         self.design = design
-        self.eco_history: List[str] = []
+        self.eco_history: list[str] = []
 
     def size_cell(self, inst_name: str, new_cell_type: str) -> bool:
         if inst_name not in self.design.instances:
@@ -31,13 +32,13 @@ class ECOEngine:
         """
         if net_name not in self.design.nets:
             raise KeyError(f"Net '{net_name}' not found.")
-        
+
         orig_net = self.design.nets[net_name]
         new_net_name = f"{net_name}_eco_buf_{inst_name}"
-        new_net = self.design.get_or_create_net(new_net_name, wire_cap=0.5)
+        self.design.get_or_create_net(new_net_name, wire_cap=0.5)
 
         # Add buffer instance
-        buf_inst = self.design.add_instance(inst_name, cell_type)
+        self.design.add_instance(inst_name, cell_type)
         self.design.connect(inst_name, "A", net_name)
         self.design.connect(inst_name, "Y", new_net_name, is_driver=True)
 
@@ -66,16 +67,16 @@ class ECOEngine:
         if net_name not in self.design.nets:
             raise KeyError(f"Net '{net_name}' not found.")
         orig_net = self.design.nets[net_name]
-        
+
         # Sinks to be clustered (excluding existing repeaters or primary inputs)
         sinks = [s for s in orig_net.sink_pins if not s.startswith("u_buf_eco")]
         num_clusters = (len(sinks) + max_fanout - 1) // max_fanout
-        
+
         for i in range(num_clusters):
             cluster_sinks = sinks[i * max_fanout : (i + 1) * max_fanout]
             buf_name = f"u_buf_tree_{i}"
             tree_net_name = f"{net_name}_tree_lvl1_{i}"
-            
+
             # Create branch net and buffer
             self.design.get_or_create_net(tree_net_name, wire_cap=orig_net.wire_cap / (num_clusters + 1))
             self.design.add_instance(buf_name, cell_type)
@@ -99,7 +100,7 @@ class ECOEngine:
         """
         Parses and executes a Tcl ECO file line by line.
         """
-        with open(script_path, "r", encoding="utf-8") as f:
+        with open(script_path, encoding="utf-8") as f:
             lines = f.readlines()
 
         for line in lines:
@@ -161,7 +162,7 @@ class ECOEngine:
                 if net and cell:
                     self.split_fanout(net, cell, max_fanout)
 
-    def run_automated_timing_closure(self, max_iterations: int = 10, target_setup_margin: float = 20.0, target_hold_margin: float = 15.0) -> Dict:
+    def run_automated_timing_closure(self, max_iterations: int = 10, target_setup_margin: float = 20.0, target_hold_margin: float = 15.0) -> dict:
         """
         Automated ECO algorithm:
         1. Fix HFN & Max Slew violations via driver sizing and buffer insertion.

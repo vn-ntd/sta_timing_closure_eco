@@ -3,16 +3,10 @@ Demonstration of Automated / Algorithmic ECO Timing Closure.
 Iteratively optimizes Setup Slack, inserts Hold Buffers, splits HFNs, and recovers Leakage Power.
 """
 
-import sys
-import os
-
-pkg_root = os.path.dirname(os.path.abspath(__file__))
-if pkg_root not in sys.path:
-    sys.path.insert(0, pkg_root)
-
 from models.design import build_high_perf_mac_design
-from models.sta_engine import STAEngine, STACondition
 from models.eco_engine import ECOEngine
+from models.sta_engine import STAEngine
+
 
 def run_auto_eco_demo():
     print("=" * 84)
@@ -43,5 +37,7 @@ def run_auto_eco_demo():
     print(f"Final Hold Slack  (WNS): {rep_hold_fin.slack:.2f} ps ({'VIOLATED' if rep_hold_fin.slack < 0 else 'MET'})")
     print("=" * 84)
 
+main = run_auto_eco_demo
+
 if __name__ == "__main__":
-    run_auto_eco_demo()
+    main()

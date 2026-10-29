@@ -48,6 +48,15 @@ ehthumbs.db
 $RECYCLE.BIN/
 .DS_Store
 
+# Test & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Generated reports & outputs
+reports/
+
 # Temporary outputs & logs
 *.log
 *.zip

@@ -4,9 +4,11 @@ dynamic path tracing, and PrimeTime-compatible timing report generator.
 """
 
 from dataclasses import dataclass
-from typing import List, Dict, Optional, Tuple
-from .lib_cells import LIB, CellType
-from .design import CircuitDesign, Instance, Net
+from typing import Optional
+
+from .design import CircuitDesign, Net
+from .lib_cells import LIB
+
 
 @dataclass
 class TimingPoint:
@@ -28,8 +30,8 @@ class TimingPathReport:
     clock_period: float
     clock_uncertainty: float
     crpr_credit: float
-    arrival_points: List[TimingPoint]
-    capture_points: List[TimingPoint]
+    arrival_points: list[TimingPoint]
+    capture_points: list[TimingPoint]
     data_arrival_time: float
     data_required_time: float
     slack: float
@@ -58,7 +60,7 @@ class STAEngine:
         elmore = (0.5 * net.wire_res * net.wire_cap) + (net.wire_res * sinks_cap)
         return round(elmore * 0.001, 2)
 
-    def analyze_clock_network(self, clk_type: str) -> Tuple[float, float, float, List[TimingPoint], List[TimingPoint]]:
+    def analyze_clock_network(self, clk_type: str) -> tuple[float, float, float, list[TimingPoint], list[TimingPoint]]:
         cond = self.condition
         derate_launch = cond.late_derate if clk_type == "max" else cond.early_derate
         derate_capture = cond.early_derate if clk_type == "max" else cond.late_derate
@@ -108,7 +110,7 @@ class STAEngine:
 
         # Launch points
         launch_pts.append(TimingPoint("clk", "source", "port", 0.0, 0.0, 15.0, 0.0, 1.0))
-        launch_pts.append(TimingPoint("u_clk_root/Y", "u_clk_root", inst_root.cell_type_name, 
+        launch_pts.append(TimingPoint("u_clk_root/Y", "u_clk_root", inst_root.cell_type_name,
                                       round(t_root_launch, 2), round(t_root_launch, 2), round(root_slew, 2), load_root, derate_launch))
         launch_pts.append(TimingPoint("u_clk_launch_1/Y (clk_launch)", "u_clk_launch_1", inst_launch1.cell_type_name,
                                       round(t_l1, 2), round(t_launch_total, 2), round(l1_slew, 2), load_launch1, derate_launch))
@@ -126,7 +128,7 @@ class STAEngine:
 
         return t_launch_total, t_capture_total, crpr_credit, launch_pts, capture_pts
 
-    def _trace_data_chain(self, start_inst: str, end_inst: str, clk_launch_delay: float, initial_slew: float, derate: float) -> Tuple[float, List[TimingPoint]]:
+    def _trace_data_chain(self, start_inst: str, end_inst: str, clk_launch_delay: float, initial_slew: float, derate: float) -> tuple[float, list[TimingPoint]]:
         """
         Dynamically traverses from start flip-flop Q pin through combinational gates/buffers to endpoint D pin.
         """
@@ -167,7 +169,7 @@ class STAEngine:
 
             visited_instances.add(next_inst_name)
             inst = self.design.instances[next_inst_name]
-            
+
             # Find output pin and driving net
             out_pin = "Y" if "Y" in inst.connections else ("S" if "S" in inst.connections else "Q")
             out_net_name = inst.connections.get(out_pin)
@@ -283,12 +285,12 @@ class STAEngine:
             violation=(slack < 0.0)
         )
 
-    def analyze_high_fanout_nets(self, max_fanout_limit: int = 16, max_slew_limit: float = 60.0) -> List[Dict]:
+    def analyze_high_fanout_nets(self, max_fanout_limit: int = 16, max_slew_limit: float = 60.0) -> list[dict]:
         violations = []
         for net_name, net in self.design.nets.items():
             fanout = len(net.sink_pins)
             total_load = self.design.compute_net_load(net_name)
-            
+
             driver_cell = "Unknown"
             out_slew = 0.0
             if net.driver_pin:
@@ -309,7 +311,7 @@ class STAEngine:
                 })
         return violations
 
-    def compute_power_and_area(self) -> Tuple[float, float]:
+    def compute_power_and_area(self) -> tuple[float, float]:
         total_leakage = 0.0
         total_area = 0.0
         for inst in self.design.instances.values():
@@ -338,7 +340,7 @@ class STAEngine:
         lines.append("-" * 84)
         lines.append(f"  data arrival time                                      {path.data_arrival_time:>10.2f}")
         lines.append("")
-        
+
         if path.path_type == "max":
             lines.append(f"  clock clk (rise edge)                                  {path.clock_period:>10.2f}")
             lines.append(f"  clock network delay (capture early)                    {path.capture_points[-1].path_delay:>10.2f}")
@@ -353,7 +355,7 @@ class STAEngine:
             status = "VIOLATED" if path.violation else "MET"
             lines.append(f"  slack ({status})                                          {path.slack:>10.2f} ps")
         else:
-            lines.append(f"  clock clk (rise edge)                                        0.00")
+            lines.append("  clock clk (rise edge)                                        0.00")
             lines.append(f"  clock network delay (capture late)                     {path.capture_points[-1].path_delay:>10.2f}")
             lines.append(f"  clock reconvergence pessimism (CRPR)                   {-path.crpr_credit:>10.2f}")
             lines.append(f"  clock uncertainty (jitter)                             {path.clock_uncertainty:>10.2f}")

@@ -5,7 +5,7 @@ VT variants (LVT, SVT, HVT), and drive strengths (X1, X2, X4, X8).
 """
 
 from dataclasses import dataclass
-from typing import Dict, Tuple
+
 
 @dataclass
 class CellType:
@@ -92,7 +92,7 @@ BASE_CELL_SPECS = {
 
 class StandardLibrary:
     def __init__(self):
-        self.cells: Dict[str, CellType] = {}
+        self.cells: dict[str, CellType] = {}
         self._build_library()
 
     def _build_library(self):
@@ -105,7 +105,7 @@ class StandardLibrary:
                 vt_data = VT_FACTORS[vt]
                 for drive in [1, 2, 4, 8]:
                     cell_name = f"{base}_X{drive}_{vt}"
-                    
+
                     # Higher drive reduces effective output resistance
                     drive_res = spec["drive_res"] * drive_scales[drive] * vt_data["delay"]
                     base_delay = spec["base_delay"] * vt_data["delay"]
@@ -155,7 +155,7 @@ class StandardLibrary:
             return target
         raise ValueError(f"Target cell {target} does not exist.")
 
-    def calculate_cell_delay_and_slew(self, cell_type: CellType, in_slew: float, load_cap: float) -> Tuple[float, float]:
+    def calculate_cell_delay_and_slew(self, cell_type: CellType, in_slew: float, load_cap: float) -> tuple[float, float]:
         """
         NLDM delay formula:
         delay = base_delay + (slew_sens * in_slew) + (drive_res * load_cap)
