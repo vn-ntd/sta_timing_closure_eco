@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Field: VLSI / ASIC Design](https://img.shields.io/badge/Domain-VLSI%20%2F%20STA%20%2F%20ECO-orange.svg)](#)
-[![Status: Timing Closure Verified](https://img.shields.io/badge/Timing-Closure%20Verified-brightgreen.svg)](#)
+[![Status: Validated on synthetic design](https://img.shields.io/badge/Timing%20ECO-Validated%20on%20synthetic%20design-blue.svg)](#)
 
 > [!NOTE]
 > **Scope & Educational Modeling Notice:**  
